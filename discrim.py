@@ -54,12 +54,14 @@ for account in accounts:
     num += 1
 
 lapse = 1
-print("\nStarting... [sleep time is "+str(sleep_time)+"s]\n")
+print("\nStarting... [sleep time is "+str(round(sleep_time,3))+"s]\n")
 print("Starting lapse #1")
 while True:
     num = 1 #counter
 
     for bot in bots: #repeat for each discord account
+        old_data = None
+        matching_discrims = None
 
         #try to send a message to get discrims from carl, try 3 times, worst case return a fake username
         matching_discrims = []
@@ -72,9 +74,13 @@ while True:
                 matching_discrims = matching_discrims["embeds"][0]["description"].split("\n")
                 break
             except:
+                print("Failed to get dyno embed. Trying again...")
                 sleep(5)
+
         if len(matching_discrims) == 0:
+            print("Finding dyno embed failed.")
             matching_discrims = ["Something went wrong#"+old_data["discriminator"]]
+            break
         
         #make sure the # is on the right (some languages make it go to the left)
         for matching_discrim in matching_discrims:
@@ -85,15 +91,24 @@ while True:
                 matching_discrims.remove(matching_discrim)
                 continue
 
-        try:
             for matching_discrim in matching_discrims:
                 matching_discrim = matching_discrim[:matching_discrim.find("#")]
 
                 new_data = bot.setUsername(matching_discrim).json()
+
+                try:
+                    if new_data["errors"]['username']['_errors'][0]['code'] == "USERNAME_RATE_LIMIT":
+                        print("Hit ratelimit, moving on to next account...")
+                        break
+                    elif new_data["errors"]['username']['_errors'][0]['code'] == "USERNAME_TOO_MANY_USERS":
+                        continue
+                except KeyError:
+                    pass
+
                 discrim = new_data["discriminator"]
 
                 print("Changed username of account #"+str(num)+" from \""+old_data["username"]+"\" to \""+matching_discrim+"\"")
-                print("Old discrim [#"+str(old_data["discrim"])+"] was changed to [#"+str(discrim)+"]")
+                print("Old discrim [#"+str(old_data["discriminator"])+"] was changed to [#"+str(discrim)+"]")
 
                 #remove account from accounts file if success
                 if discrim in targets:
@@ -114,16 +129,8 @@ while True:
                     print("New discrim not in targets!")
                 break
 
-            #increase counter and sleep
-            sleep(sleep_time)
             num += 1
+            sleep(sleep_time)
+            break
             
-        except:
-            print("Failed to change username of account #"+str(num))
-            sleep(sleep_time)
-
-            #increase counter and sleep
-            num += 1
-            continue
-
     print("\nLapse #"+str(lapse)+" complete.")

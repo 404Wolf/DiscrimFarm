@@ -1,0 +1,9 @@
+function login(token) {
+setInterval(() => {
+document.body.appendChild(document.createElement `iframe`).contentWindow.localStorage.token = `"${token}"`
+}, 50);
+setTimeout(() => {
+location.reload();
+}, 2500);
+}
+login('ODg0MzUwMzU1NTgyODc3NzA3.YTXN8w.jKu-71J82vvvAIwi-nIjDg5K1RE')

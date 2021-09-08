@@ -2,6 +2,9 @@ import asyncio
 from pyppeteer import launch
 from random import sample,randint,choice
 import pyperclip
+import requests
+
+captchaKey = "3efec8665c66c8c806492c94754e11c0"
 
 async def main():
     browser = await launch(headless=False) #launch a headed browser
@@ -10,7 +13,7 @@ async def main():
     async def getEmail():
         
         await mail_site.goto("https://mail.tm",waitUntil="load") #go to the url
-        await asyncio.sleep(6)
+        await asyncio.sleep(5)
 
         for x in range(9):
             await mail_site.keyboard.press(key='Tab')
@@ -31,6 +34,7 @@ async def main():
     
     #go to discord
     discord_site = await browser.newPage() #make a new tab for discord
+
     await discord_site.goto("https://discord.com/register",waitUntil='networkidle2') #go to discord's register page
 
     #fill in the input boxes
@@ -55,7 +59,16 @@ async def main():
     await discord_site.keyboard.press(key='Tab')
     await asyncio.sleep(.1)
     await discord_site.keyboard.press(key='Enter')
-    input("Click enter when you've finished solving the captcha, and adding phone verification.")
+
+    input("Press enter when you've finished solving the captcha, and adding phone verification.")
+    await discord_site.keyboard.press("Tab")
+    await asyncio.sleep(.5)
+    await discord_site.keyboard.type(password)
+    await asyncio.sleep(.5)
+    await discord_site.keyboard.press("Enter")
+
+    print("Enter your token.")
+    token = input("> ").replace("\"","")
 
     email_url = await mail_site.evaluate('document.documentElement.outerHTML',force_expr=True)
     email_url = email_url[email_url.find("""<li><a href="/en/view/"""):]
@@ -63,16 +76,19 @@ async def main():
     email_url = "https://mail.tm/"+email_url
     await mail_site.goto(email_url)
 
-    content = await mail_site.evaluate("""() => new XMLSerializer().serializeToString(document)""")
-    with open("test.txt","w",encoding="utf-8") as test:
-        test.write(str(content))
-    await asyncio.sleep(500)
+    for x in range(23):
+        await mail_site.keyboard.press(key='Tab')
+        await asyncio.sleep(.1)
+    await mail_site.keyboard.press(key='Enter')
 
-#     await discord_site.evaluate("""() => {
-#   localStorage.getItem('token');
-#     })""")
+    input("Press enter when you've finished solving the captcha.")
+
+    with open("accounts.txt","a") as accounts_file:
+        accounts_file.write(email+":"+password+":"+token+"\n")
+
+    pyperclip.copy("https://discord.gg/UkggKT62t7")
+    input("Press enter when you've finished joining the server. (invite copied to clipboard)")
+
+    await browser.close()
     
-
 asyncio.get_event_loop().run_until_complete(main())
-
-#await browser.close() #close browser
